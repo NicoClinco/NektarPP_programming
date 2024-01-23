@@ -1,0 +1,40 @@
+
+<NEKTAR>
+  
+  
+  <CONDITIONS>
+
+    
+    <!-- SOLVER-PROPERTIES--> 
+    <SOLVERINFO>
+      <I PROPERTY="EQType"                VALUE="NavierStokesCFE"     />
+      <I PROPERTY="Projection"            VALUE="DisContinuous"       />
+      <I PROPERTY="AdvectionType"         VALUE="WeakDG"              />
+      <I PROPERTY="DiffusionType"         VALUE="LDGNS"               />
+      <I PROPERTY="TimeIntegrationMethod" VALUE="RungeKutta4"        />
+      <I PROPERTY="UpwindType"            VALUE="HLLC"                />
+      <I PROPERTY="ProblemType"           VALUE="General"             />
+      <I PROPERTY="EquationOfState"       VALUE="IdealGas"            />
+      <I PROPERTY="ViscosityType"         VALUE="Constant"            />
+    </SOLVERINFO>
+    <!---------------------->
+
+    
+    <PARAMETERS>
+      <P> num0 = 0.5 </P>
+    </PARAMETERS>
+
+
+    <FUNCTION NAME="my_beauty_function">
+      <E VAR="rho" VALUE="130+x-2"/>
+    </FUNCTION>
+    
+
+
+    
+  </CONDITIONS>
+
+
+
+  
+</NEKTAR>

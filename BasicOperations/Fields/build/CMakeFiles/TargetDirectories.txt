@@ -1,0 +1,3 @@
+/home/nico/Desktop/NektarPP/Programming/BasicOperations/Fields/build/CMakeFiles/FieldManip.dir
+/home/nico/Desktop/NektarPP/Programming/BasicOperations/Fields/build/CMakeFiles/edit_cache.dir
+/home/nico/Desktop/NektarPP/Programming/BasicOperations/Fields/build/CMakeFiles/rebuild_cache.dir

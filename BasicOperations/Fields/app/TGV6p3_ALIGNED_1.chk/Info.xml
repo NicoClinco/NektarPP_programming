@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<NEKTAR>
+    <Metadata>
+        <Provenance>
+            <Hostname>cn04-02</Hostname>
+            <NektarVersion>5.0.3</NektarVersion>
+            <Timestamp>22-Dec-2023 22:16:29</Timestamp>
+        </Provenance>
+        <ChkFileNum>1</ChkFileNum>
+        <SessionName0>TGV6p3_ALIGNED_xml/P0000000.xml</SessionName0>
+        <Time>0</Time>
+    </Metadata>
+    <Partition FileName="P0000000.fld">40-41,46-47,75-77,81-83</Partition>
+    <Partition FileName="P0000001.fld">3-5,9-11,15-16,39,45,51</Partition>
+    <Partition FileName="P0000002.fld">17,22-23,52-53,58-59,88-89,94-95</Partition>
+    <Partition FileName="P0000003.fld">21,27,33-34,57,63,69,87,93,99,105</Partition>
+    <Partition FileName="P0000004.fld">28-29,35,64-65,70-71,100-101,106-107</Partition>
+    <Partition FileName="P0000005.fld">111-113,117-119,124-125,155,161</Partition>
+    <Partition FileName="P0000006.fld">147-149,153-154,183-185,189-191</Partition>
+    <Partition FileName="P0000007.fld">123,129,135,141,159,165,171,177,201,207,213</Partition>
+    <Partition FileName="P0000008.fld">130-131,136-137,142-143,167,172-173,178-179</Partition>
+    <Partition FileName="P0000009.fld">160,166,195-197,202-203,208-209,214-215</Partition>
+    <Partition FileName="P0000010.fld">37-38,43-44,72-74,78-80</Partition>
+    <Partition FileName="P0000011.fld">0-2,6-8,12-13,36,42,48</Partition>
+    <Partition FileName="P0000012.fld">14,19-20,49-50,55-56,85-86,91-92</Partition>
+    <Partition FileName="P0000013.fld">25-26,32,61-62,67-68,97-98,103-104</Partition>
+    <Partition FileName="P0000014.fld">18,24,30-31,54,60,66,84,90,96,102</Partition>
+    <Partition FileName="P0000015.fld">110,116,145-146,151-152,181-182,187-188</Partition>
+    <Partition FileName="P0000016.fld">108-109,114-115,120-121,144,150,156,180,186</Partition>
+    <Partition FileName="P0000017.fld">122,127-128,157-158,163-164,193-194,199-200</Partition>
+    <Partition FileName="P0000018.fld">133-134,140,169-170,175-176,205-206,211-212</Partition>
+    <Partition FileName="P0000019.fld">126,132,138-139,162,168,174,192,198,204,210</Partition>
+</NEKTAR>
