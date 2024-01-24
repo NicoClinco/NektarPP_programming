@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <numeric>
 
 #include <LibUtilities/Foundations/ManagerAccess.h>
 #include <LibUtilities/Polylib/Polylib.h>
@@ -40,13 +41,45 @@ int main(int argc, char *argv[])
   for(auto pfd : FieldDefs)
     {
       auto fd = *pfd;
-      
+      /*
       std::vector<std::string> fields = fd.m_fields;
       for(auto field : fields)
 	std::cout << field << " ";
-      std::cout << "\n";
-    }
+	std::cout << "\n";*/
+      } 
+      
+  // Creating a specific class for read multifld files:
+  LibUtilities::FieldIOXml FieldIOxml(pComm,false);
+
   
+
+  
+  //In this case we read directly the .fld files and we get the
+  //elements partition:
+  LibUtilities::FieldMetaDataMap FieldInfoMapPar;
+
+  //ElementsID
+  std::vector< std::vector< unsigned int >> elementsID;
+  //.fld files present in the directory
+  std::vector<std::string> fileNames;
+  
+  std::string InfoFile("./TGV6p3_ALIGNED_1.chk/Info.xml");
+  FieldIOxml.ImportMultiFldFileIDs(InfoFile, fileNames, elementsID,FieldInfoMapPar);
+
+  //Print the .fld files:
+  for(const auto& file : fileNames)
+    std::cout << file << " ";
+
+  //Print the elements id:
+  //Here we have the elements id.
+  
+  
+  unsigned int sum = 0;  
+  for(const auto& els : elementsID)
+    sum+=els.size();
+  
+
+  std::cout << sum << "\n";
   
   /*
   for(auto row :FieldData)

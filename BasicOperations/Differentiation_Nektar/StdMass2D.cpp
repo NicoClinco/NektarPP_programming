@@ -128,7 +128,9 @@ int main(int, char **)
       }// End complete loop with p
 
     // In this case we should obtain a diagonal
-    // matrix :D
+    // matrix, and, indeed this was the case luckely.
+
+    
    
     //std::cout << mass << "\n";
 
@@ -143,18 +145,19 @@ int main(int, char **)
     StdRegions::StdMatrixKey mkey(StdRegions::MatrixType::eMass,
 			     LibUtilities::ShapeType::eQuadrilateral,
 			     Quad_exp);
-    
+
+    //Here we obtain the mass matrix by the mkey:
     DNekMatSharedPtr pmatrix = Quad_exp.GetStdMatrix(mkey);
     const auto& matrix = *pmatrix;
 
+    
+    
     //In this case we can obtain the Physical derivatives:
     //at the quadrature points:
-
     Array<OneD,NekDouble> Derivatives(2);
     Quad_exp.PhysDeriv(1,quadZeros,Derivatives);
 
-    for(const auto& x : Derivatives)
-      std::cout << x << " ";
+    
    
     /*
     for(unsigned int r=0;r<matrix.GetRows();++r)
