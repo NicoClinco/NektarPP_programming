@@ -3,9 +3,11 @@
 
 #include <LibUtilities/Foundations/ManagerAccess.h>
 #include <LibUtilities/Polylib/Polylib.h>
+#include <LibUtilities/LinearAlgebra/NekMatrix.hpp>
 #include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
 #include <StdRegions/StdQuadExp.h>
 #include <StdRegions/StdMatrixKey.h>
+#include <LocalRegions/MatrixKey.h>
 
 #include <Eigen/Dense>
 
@@ -22,7 +24,7 @@ int main(int, char **)
     cout << "standard segment xi=[-1,1]x[-1,1] using quadrature points" << endl;
 
     // Specify the number of quadrature points
-    int nQuadPoints = 7;
+    int nQuadPoints = 3;
 
     // Specify the type of quadrature points. This is done using the proper
     // Nektar++ syntax.
@@ -66,6 +68,8 @@ int main(int, char **)
      */
     const unsigned int Nmodes = 3;
     const LibUtilities::PointsKey basisPointsKey(nQuadPoints, quadPointsType);
+
+    // Generate the orthogonal basis (Gauss-Legeandre)
     const LibUtilities::BasisKey basisKey(LibUtilities::BasisType::eOrtho_A,
 					  Nmodes,basisPointsKey);
     
@@ -95,6 +99,7 @@ int main(int, char **)
     };
     
     // Create the mass matrix and store it into eigen:
+    
     const unsigned int P = Nmodes-1;
     
     Eigen::MatrixXd mass=Eigen::MatrixXd::Zero(Nmodes*Nmodes,Nmodes*Nmodes);
@@ -127,31 +132,120 @@ int main(int, char **)
 	  }// End complete loop with q
       }// End complete loop with p
 
+
+    
+    std::cout << mass << "\n";
+    
     // In this case we should obtain a diagonal
-    // matrix :D
-   
-    //std::cout << mass << "\n";
+    // matrix, and, indeed we obtain a diag. matrix.
+
 
     /**
      *@brief In the following example, 
      *we generate an StdQuadExpansion
+     *
+     * Note: This is another way to do the
+     * things.
+     *
+     *
      */
     StdRegions::StdQuadExp Quad_exp(basisKey,basisKey);
-    //StdRegions::DNekMatSharedPtr matrix(StdRegions::StdMatrixKey::e
+   
 
     //For obtaining the mass matrix, we must set the stdMatrixKey
     StdRegions::StdMatrixKey mkey(StdRegions::MatrixType::eMass,
 			     LibUtilities::ShapeType::eQuadrilateral,
 			     Quad_exp);
 
-    DNekMatSharedPtr matrix = Quad_exp.GetStdMatrix(mkey);
+    //Here we obtain the mass matrix by the mkey:
+    DNekMatSharedPtr pmatrix = Quad_exp.GetStdMatrix(mkey);
+    const auto& matrix = *pmatrix;
 
-    std::cout << "\n" << " Shape of the mass matrix : "
-	      << matrix->operator()(0,1) << "\n";
+    
+    
+    //In this case we can obtain the Physical derivatives:
+    //at the quadrature points:
+    Array<OneD,NekDouble> Derivatives(2);
+    Quad_exp.PhysDeriv(1,quadZeros,Derivatives);
+
+
+    /**
+     Transformation from the
+     physical space to the basis coefficient: 
+
+     Suppose that you want the coefficients
+     of \Psi_{i} where i is the index of the basis.
+    */
+    Array<OneD,NekDouble> uPhys(nQuadPoints,0.0);
+
+    /** Values of Phi_0 in every quadrature point:
+        (Physical values)
+    */
+    for(unsigned int i=0;i<nQuadPoints;++i)
+      uPhys[i] = basisValues[i+nQuadPoints];
+
+    Array<OneD,NekDouble> uModal(Nmodes*Nmodes,0.0);
+
+    /**
+     * \sum_i=0^{i=Nmodes} \Phi_i(xj) \phiHat_i 
+     * <-> Phi_0(x_j)
+     * 
+     */
+    Quad_exp.FwdTrans(uPhys,uModal);
+
+    for(const auto& uHat0 : uModal)
+      std::cout << uHat0 << " ";
+    std::cout << "\n";
+
+    /**
+     * From the modal to the physical 
+     * space (The function is evaluated
+     * in the quadrature nodes)
+     */
+    Array<OneD,NekDouble> uPhysQuad(nQuadPoints,0.0);
+
+    Quad_exp.BwdTrans(uModal,uPhysQuad);
+
+    for(unsigned i =0;i<uPhysQuad.size();++i)
+      {
+	std::cout << uPhysQuad[i] << "  " << basisValues[i+nQuadPoints] << "\n";
+      }
+    std::cout << "\n";
+
+    /**
+     * Creating a matrix which contains the laplacian terms
+     *
+     */
+
+    /// Total number of modes:
+    const int numLocalDofs = Quad_exp.GetNcoeffs();
+    std::cout << "Number of total modes of the quadrilateral expansion :" << numLocalDofs << "\n";
+    
+    /// StdMatrixKey:
+    const StdRegions::StdMatrixKey Kkey(StdRegions::MatrixType::eMass,
+					LibUtilities::ShapeType::eQuadrilateral,
+					Quad_exp);
+
+    /// Create the stiffness matrix (laplacian)
+    Array<OneD,NekDouble> stiffnessMatrix(numLocalDofs,0.0);
+
+    Array<OneD,NekDouble> InputArray(numLocalDofs,1.0);
+    
+    Quad_exp.GeneralMatrixOp(InputArray,stiffnessMatrix,Kkey);
+
+    /**
+     * Note: I have checked personally that for the mass matrix the 
+     * things work :D
+     */
+    for(const auto& el : stiffnessMatrix)
+      std::cout << el << "\n";
     
     
     
     
+    
+    
+
     
     
     
