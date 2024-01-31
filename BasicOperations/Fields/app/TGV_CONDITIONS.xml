@@ -1,0 +1,127 @@
+<!-- Taylor Green's problem - 3D -->
+<?xml version="1.0" encoding="utf-8"?>
+
+<NEKTAR>
+  <EXPANSIONS>
+	<E COMPOSITE="C[0]" NUMMODES="4" FIELDS="rho,rhou,rhov,rhow,E" TYPE="MODIFIED" />
+  </EXPANSIONS>
+  <FILTERS>  
+  <FILTER TYPE="Energy">
+	<PARAM NAME="OutputFile"> TGV6p3Energy </PARAM>
+        <PARAM NAME="OutputFrequency"> 1 </PARAM>
+  </FILTER>
+  </FILTERS>
+  <CONDITIONS>
+	<SOLVERINFO>
+      <I PROPERTY="EQType"                VALUE="NavierStokesCFE"     />
+      <I PROPERTY="Projection"            VALUE="DisContinuous"       />
+      <I PROPERTY="AdvectionType"         VALUE="WeakDG"              />
+      <I PROPERTY="DiffusionType"         VALUE="LDGNS"               />
+      <I PROPERTY="TimeIntegrationMethod" VALUE="RungeKutta4"        />
+      <I PROPERTY="UpwindType"            VALUE="AUSM0"                />
+      <I PROPERTY="ProblemType"           VALUE="General"             />
+      <I PROPERTY="EquationOfState"       VALUE="IdealGas"            />
+      <I PROPERTY="ViscosityType"         VALUE="Constant"            />
+    </SOLVERINFO>
+
+    <PARAMETERS>
+	
+ 	<!--  
+	<P> CFL          = 0.001                </P>
+	<P> FinalTime           = 20                            </P>
+	-->   
+       
+      <P> TimeStep            = 0.001    </P>
+      <P> FinalTime           = 20                            </P>
+      <P> NumSteps            = FinalTime/TimeStep              </P>
+      <P> IO_CFLSteps         = 500      </P>  
+      <P> IO_CheckSteps       = 500     </P>
+      <P> IO_InfoSteps        = 100      </P>
+      <P> Gamma               = 1.4                             </P>
+      <P> Pr                  = 0.72                            </P>
+      <P> Mach                = 0.08                            </P>
+      <P> Re                  = 500.0                           </P>
+      <P> GasConstant         = 1/(Gamma*Mach*Mach)              </P>
+      <P> mu                  = 1.0/Re                          </P>
+      <P> V0                  = 1                               </P>
+      <P> L                   = 1                               </P>
+      <P> rhoInf              = 1.0                             </P> 
+      <P> pInf                = 100.0                           </P>
+      <P> uInf                = V0                              </P>
+	  <P> Tinf                = pInf/(GasConstant*rhoInf)       </P>
+      <P> vInf                = 0.0                             </P>
+	  <P> wInf                = 0.0                             </P>
+    </PARAMETERS>
+    <VARIABLES>
+      <V ID="0"> rho  </V>
+      <V ID="1"> rhou </V>
+      <V ID="2"> rhov </V>
+      <V ID="3"> rhow </V>
+      <V ID="4"> E    </V>
+    </VARIABLES>
+    <BOUNDARYREGIONS>
+      <B ID="0"> C[1] </B>
+      <B ID="1"> C[2] </B>
+      <B ID="2"> C[3] </B>
+      <B ID="3"> C[4] </B>
+      <B ID="4"> C[5] </B>
+      <B ID="5"> C[6] </B>
+    </BOUNDARYREGIONS>
+    <BOUNDARYCONDITIONS>
+      <REGION REF="0">
+        <P VAR="rho" VALUE="[1]" />
+		<P VAR="rhou" VALUE="[1]" />
+        <P VAR="rhov" VALUE="[1]" />
+        <P VAR="rhow" VALUE="[1]" />
+        <P VAR="E" VALUE="[1]" />
+      </REGION>
+      <REGION REF="1">
+        <P VAR="rho" VALUE="[0]" />
+		<P VAR="rhou" VALUE="[0]" />
+        <P VAR="rhov" VALUE="[0]" />
+        <P VAR="rhow" VALUE="[0]" />
+        <P VAR="E" VALUE="[0]" />
+      </REGION>
+      <REGION REF="2">
+        <P VAR="rho" VALUE="[4]" />
+		<P VAR="rhou" VALUE="[4]" />
+        <P VAR="rhov" VALUE="[4]" />
+        <P VAR="rhow" VALUE="[4]" />
+        <P VAR="E" VALUE="[4]" />
+      </REGION>
+      <REGION REF="3">
+		<P VAR="rho" VALUE="[5]" />
+		<P VAR="rhou" VALUE="[5]" />
+        <P VAR="rhov" VALUE="[5]" />
+        <P VAR="rhow" VALUE="[5]" />
+        <P VAR="E" VALUE="[5]" />
+      </REGION>
+      <REGION REF="4">
+        <P VAR="rho" VALUE="[2]" />
+		<P VAR="rhou" VALUE="[2]" />
+        <P VAR="rhov" VALUE="[2]" />
+        <P VAR="rhow" VALUE="[2]" />
+        <P VAR="E" VALUE="[2]" />
+      </REGION>
+      <REGION REF="5">
+		<P VAR="rho" VALUE="[3]" />
+		<P VAR="rhou" VALUE="[3]" />
+        <P VAR="rhov" VALUE="[3]" />
+        <P VAR="rhow" VALUE="[3]" />
+        <P VAR="E" VALUE="[3]" />
+      </REGION>
+      
+    </BOUNDARYCONDITIONS>
+
+    <FUNCTION NAME="InitialConditions">
+      <E VAR="rho" VALUE="rhoInf"/>
+      <E VAR="rhou" VALUE="rhoInf* V0 * sin(x+PI) * cos(y+PI) * cos(z+PI)" />
+      <E VAR="rhov" VALUE="-rhoInf * V0 * cos(x+PI) * sin(y+PI) * cos(z+PI)" />
+      <E VAR="rhow" VALUE="0" />
+	  <E VAR="E" VALUE="(pInf+ (1/16)*(cos(2*(x+PI))+cos(2*(y+PI)))*(cos(2*(z+PI))+2))/(Gamma-1)+0.5*(rho*(rhou*rhou + rhov*rhov + rhow*rhow))" />
+	</FUNCTION>
+    
+
+  </CONDITIONS>
+</NEKTAR>
+

@@ -226,7 +226,8 @@ int main(int, char **)
 					LibUtilities::ShapeType::eQuadrilateral,
 					Quad_exp);
 
-    /// Create the stiffness matrix (laplacian)
+    /// In this case we calculate the Laplacian of
+    /// an array of ones:
     Array<OneD,NekDouble> stiffnessMatrix(numLocalDofs,0.0);
 
     Array<OneD,NekDouble> InputArray(numLocalDofs,1.0);
@@ -235,7 +236,7 @@ int main(int, char **)
 
     /**
      * Note: I have checked personally that for the mass matrix the 
-     * things work :D
+     * things work
      */
     for(const auto& el : stiffnessMatrix)
       std::cout << el << "\n";

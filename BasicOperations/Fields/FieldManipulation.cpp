@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <numeric>
+#include <vector>
 
 #include <LibUtilities/Foundations/ManagerAccess.h>
 #include <LibUtilities/Polylib/Polylib.h>
@@ -28,7 +29,7 @@ int main(int argc, char *argv[])
   pFieldIOxml = LibUtilities::FieldIOXml::create(pComm,false);
 
 
-  //Import an Xml file:
+  //Import a .chk file:
   std::string Inputfile("TGV6p3_ALIGNED_1.chk");
   std::vector<LibUtilities::FieldDefinitionsSharedPtr> FieldDefs;
   std::vector<std::vector<NekDouble>> FieldData;
@@ -36,18 +37,52 @@ int main(int argc, char *argv[])
 
   pFieldIOxml->Import(Inputfile,FieldDefs,FieldData,FieldInfoMap);
 
-  // Perform a cycle for every fld files
-  // that is present in the domain:
+
+  // Read the field Meta data:
+  /*
+   for (const auto& pair : FieldInfoMap) {
+        std::cout << " " << pair.first << " " << pair.second << "\n";
+    }
+  */
+
+  /**
+   * FieldData will contain fields defined in FieldDefs.
+   */
+  
+  /// Perform a cycle for every fld file
+  /// that is contained in the directory:
   for(auto pfd : FieldDefs)
     {
       auto fd = *pfd;
-      /*
-      std::vector<std::string> fields = fd.m_fields;
-      for(auto field : fields)
-	std::cout << field << " ";
-	std::cout << "\n";*/
-      } 
+      ///Every single file contains different fields:
+      std::vector<std::string> field_names = fd.m_fields;
+
+      /// Field names:
+      ///for(auto fieldname : field_names)
+      ///	std::cout << fieldname << " ";
+
+      /// Number of modes per direction:
+      ///std::vector<unsigned int> nummodes = fd.m_numModes;
       
+      /*
+      std::cout << "Number of points x-y-z:" << fd.m_numPoints[0] << " "
+       	<< fd.m_numPoints[1] << " "<< fd.m_numPoints[2] <<"\n";
+      */
+      }
+
+  /// TO DO: Read the mesh file and introduce an ordering for
+  /// understanding the coordinates.
+  
+  /// Printing the fields as vectors: size = 20:
+  std::cout << "Field-data-size :" <<  FieldData.size() <<"\n";
+
+  /// Note: Every field is stored in a contiguos vector
+  /// for each fld file.
+  for(const auto& phi : FieldData)
+    std::cout << phi.size() << " ";
+  std::cout << "\n";
+
+  
   // Creating a specific class for read multifld files:
   LibUtilities::FieldIOXml FieldIOxml(pComm,false);
 
@@ -72,25 +107,13 @@ int main(int argc, char *argv[])
 
   //Print the elements id:
   //Here we have the elements id.
-  
-  
-  unsigned int sum = 0;  
+  unsigned int total_elems = 0;  
   for(const auto& els : elementsID)
-    sum+=els.size();
+    total_elems+=els.size();
   
 
-  std::cout << sum << "\n";
-  
-  /*
-  for(auto row :FieldData)
-    {
-      
-    for(auto col : row)
-      std::cout << col << " ";
-    std::cout << "\n";
-    }
-  */
-  
+  std::cout << total_elems << "\n";
+
   
   
   
