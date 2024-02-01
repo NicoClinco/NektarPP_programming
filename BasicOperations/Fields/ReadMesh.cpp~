@@ -1,0 +1,29 @@
+#include <cstdio>
+#include <cstdlib>
+#include <numeric>
+#include <vector>
+
+#include <LibUtilities/Foundations/ManagerAccess.h>
+#include <LibUtilities/Polylib/Polylib.h>
+#include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
+#include <LibUtilities/BasicUtils/FieldIOXml.h>
+
+/// Read a mesh and put everything i a mesh graph
+
+using namespace Nektar;
+
+int main(int argc, char *argv[])
+{
+  /// Pointer to a session reader:  
+  LibUtilities::SessionReaderSharedPtr pcurrentSession;
+  pucrrentSession = LibUtilities::SessionReader::CreateInstance(argc,argv);
+
+  /// Create the mesh graph
+  SpatialDomains::MeshGraphSharedPtr graph = SpatialDomains::MeshGraph::Read(pcurrentSession);
+  
+  
+
+  
+  
+  return 0;
+}
