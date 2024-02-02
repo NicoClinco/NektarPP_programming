@@ -40,15 +40,15 @@ SET(EIGEN_PATH "/home/nico/Desktop/PHD-COURSES/libraries/eigen/include/eigen3")
 #ADD_EXECUTABLE(StdDifferentiation1D ${StdDifferentiation1DSource})
 #TARGET_LINK_LIBRARIES(StdDifferentiation1D ${NEKTAR++_LIBRARIES})
 
-#SET(StdDifferentiation2DSource  ${NekExerciseDir}/StdDifferentiation2D.cpp)
-#ADD_EXECUTABLE(StdDifferentiation2D ${StdDifferentiation2DSource})
-#TARGET_LINK_LIBRARIES(StdDifferentiation2D ${NEKTAR++_LIBRARIES})
+SET(StdDifferentiation2DSource  ${NekExerciseDir}/StdDifferentiation2D.cpp)
+ADD_EXECUTABLE(StdDifferentiation2D ${StdDifferentiation2DSource})
+TARGET_LINK_LIBRARIES(StdDifferentiation2D ${NEKTAR++_LIBRARIES})
 
 
-SET(StdMassMatrix2DSource ${NekExerciseDir}/StdMass2D.cpp)
-ADD_EXECUTABLE(StdMMatrix2D ${StdMassMatrix2DSource})
-TARGET_INCLUDE_DIRECTORIES(StdMMatrix2D PUBLIC ${EIGEN_PATH})
-TARGET_LINK_LIBRARIES(StdMMatrix2D ${NEKTAR++_LIBRARIES})
+#SET(StdMassMatrix2DSource ${NekExerciseDir}/StdMass2D.cpp)
+#ADD_EXECUTABLE(StdMMatrix2D ${StdMassMatrix2DSource})
+#TARGET_INCLUDE_DIRECTORIES(StdMMatrix2D PUBLIC ${EIGEN_PATH})
+#TARGET_LINK_LIBRARIES(StdMMatrix2D ${NEKTAR++_LIBRARIES})
 
 #SET(LocDifferentiation2DSource  ${NekExerciseDir}/LocDifferentiation2D.cpp)
 #ADD_EXECUTABLE(LocDifferentiation2D ${LocDifferentiation2DSource})

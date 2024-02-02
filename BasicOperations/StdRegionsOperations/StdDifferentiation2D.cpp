@@ -4,6 +4,8 @@
 #include <LibUtilities/Foundations/ManagerAccess.h>
 #include <LibUtilities/Polylib/Polylib.h>
 #include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
+#include <LibUtilities/BasicUtils/ErrorUtil.hpp>
+#include <LibUtilities/LinearAlgebra/NekVector.hpp>
 
 /*
  Tutorial for differentiation in Nektar
@@ -27,8 +29,8 @@ int main(int, char **)
     cout << "in the standard quadrilateral element:" << endl;
 
     // Specify the number of quadrature points in both directions
-    int nQuadPointsDir1 = 7;
-    int nQuadPointsDir2 = 9;
+    int nQuadPointsDir1 = 4;
+    int nQuadPointsDir2 = 4;
 
     // Specify the type of quadrature points in both directions
     LibUtilities::PointsType quadPointsTypeDir1 =
@@ -67,6 +69,89 @@ int main(int, char **)
     quadZerosDir2   = LibUtilities::PointsManager()[quadPointsKeyDir2]->GetZ();
     derivMatrixDir2 = LibUtilities::PointsManager()[quadPointsKeyDir2]->GetD();
 
+
+    /// Create the stiffness-matrix <gradPhii,gradPhij>
+
+    //Number of modes in the elements:
+    unsigned int NUMMODES = 2;
+
+    // Create a basiskey by the Gauss-Legendre basis:
+    const LibUtilities::BasisKey basisKey(LibUtilities::BasisType::eOrtho_A,
+					  NUMMODES,quadPointsKeyDir1);
+
+    auto pBasisDir1 = LibUtilities::Basis::Create(basisKey);
+    // Create basis for the other directions:
+    auto pBasisDir2 = LibUtilities::Basis::Create(basisKey);
+    
+    // Create NekMatrixes  which contain in every row the derivatives
+    // of the basis in the quadrature points:
+    NekMatrix<double> dPhix(nQuadPointsDir1,NUMMODES,pBasisDir1->GetDbdata());
+    NekMatrix<double> Phix(nQuadPointsDir1,NUMMODES,pBasisDir1->GetBdata());
+    NekVector<double> Wx(pBasisDir1->GetW()); //Weights along the x direction
+    
+    NekMatrix<double> dPhiy(nQuadPointsDir2,NUMMODES,pBasisDir2->GetDbdata());
+    NekMatrix<double> Phiy(nQuadPointsDir2,NUMMODES,pBasisDir2->GetBdata());
+    NekVector<double> Wy(pBasisDir2->GetW()); // Weights along the y-direction
+
+    ASSERTL0(Wx.GetDimension()==nQuadPointsDir1 ,"WARNING, THE DIMENSIONS OF THE WEIGHTS ARE != FROM THE NODES dir1");
+    ASSERTL0(Wy.GetDimension()==nQuadPointsDir2 ,"WARNING, THE DIMENSIONS OF THE WEIGHTS ARE != FROM THE NODES dir2");
+
+    /// Note: for linear-algebra operations, we need a NekVector
+    /// that is conceived for linear-algebra operations.
+
+    /**
+     * @ brief Perform the scalar product
+     *
+     */
+    auto IntegrateInNodes = [](const NekMatrix<double>& phi1,const NekMatrix<double>& phi2,
+			       unsigned int i,unsigned int j,const NekVector<double>& W)
+    {
+      ASSERTL0(phi1.GetRows()==phi2.GetRows(),"The matrixes must have the same number of quadrature points!!");
+      double Value = 0.0;
+      for(unsigned int nq =0;nq<phi1.GetRows();++nq)
+	Value+=phi1(nq,i)*phi2(nq,j)*W[nq];
+      return Value;
+    };
+    
+    // This time we use a NekMatrix<double>:
+    NekMatrix<double> K(NUMMODES*NUMMODES,NUMMODES*NUMMODES);
+    
+    for(unsigned int i=0;i<NUMMODES;++i)
+      {
+	for(unsigned int j=0;j<NUMMODES;++j)
+	  {
+	    unsigned int a = i+j*NUMMODES;
+	    for(unsigned int r=0;r<NUMMODES;++r)
+	      {
+		for(unsigned int k=0;k<NUMMODES;++k)
+		  {
+		    unsigned int b = r+k*NUMMODES;
+		    auto grgrx = IntegrateInNodes(dPhix,dPhix,i,r,Wx);
+		    auto grgry = IntegrateInNodes(dPhiy,dPhiy,j,k,Wy);
+		    auto phixphix = IntegrateInNodes(Phix,Phix,i,r,Wx);
+		    auto phiyphiy = IntegrateInNodes(Phiy,Phiy,j,k,Wy);
+		    K(a,b) = grgrx*phiyphiy+grgry*phixphix;
+		  }
+	      }
+	  }
+      }
+
+    // Iterate through the matrix using iterators
+    std::cout << K << "\n";
+
+    /// We can create a diagonal matrix:
+    /// See blockMatrix.hpp for further references:
+    NekMatrix<double> K_diag(K.GetRows(),K.GetColumns(),MatrixStorage::eDIAGONAL);
+    for(unsigned int i =0;i<K_diag.GetRows();++i)
+      K_diag(i,i) = K(i,i);
+
+    std::cout << K_diag << "\n";
+    
+    
+
+    
+    
+    
     // Now you have the quadrature zeros and the differentiation matrix,
     // apply the Gaussian quadrature technique to differentiate the function
     // f(x_1,i,x_2,j) = x_1,i^7 * x2,j^9 on the standard
@@ -75,6 +160,7 @@ int main(int, char **)
     //
     // Store the solution in the matrices 'quadDerivsDir1' and 'quadDerivsDir2'
 
+    /*
     // Analytic function:
     auto f = [] (NekDouble x, NekDouble y)
     {
@@ -125,4 +211,5 @@ int main(int, char **)
     cout << "\t q1 = " << nQuadPointsDir1 << ", q2 = " << nQuadPointsDir2;
     cout << ": Error = " << error << endl;
     cout << endl;
+    */
 }
