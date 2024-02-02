@@ -1,3 +1,0 @@
-/home/nico/Desktop/NektarPP/Programming/NektarPP_programming/BasicOperations/Session_Reader/build/CMakeFiles/ReadSession.dir
-/home/nico/Desktop/NektarPP/Programming/NektarPP_programming/BasicOperations/Session_Reader/build/CMakeFiles/edit_cache.dir
-/home/nico/Desktop/NektarPP/Programming/NektarPP_programming/BasicOperations/Session_Reader/build/CMakeFiles/rebuild_cache.dir
