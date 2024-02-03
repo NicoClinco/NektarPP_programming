@@ -22,7 +22,7 @@ ELSE()
     SET(CMAKE_CXX_EXTENSIONS OFF)
 ENDIF()
 
-FIND_PACKAGE(Nektar++ PATHS "/home/nico/nektar-v5.3.0/build")
+FIND_PACKAGE(Nektar++ PATHS "/home/nico/nektar-v5.3.0/build" "/home/nicopc/nektar-master/build")
 
 INCLUDE_DIRECTORIES(${NEKTAR++_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${NEKTAR++_TP_INCLUDE_DIRS})
@@ -30,20 +30,17 @@ LINK_DIRECTORIES(${NEKTAR++_LIBRARY_DIRS})
 LINK_DIRECTORIES(${NEKTAR++_TP_LIBRARY_DIRS})
 ADD_DEFINITIONS(${NEKTAR++_DEFINITIONS})
 
-SET(LinkLibraries StdRegions)
-
 SET(NekExerciseDir ${PROJECT_SOURCE_DIR})
 
-SET(EIGEN_PATH "/home/nico/Desktop/PHD-COURSES/libraries/eigen/include/eigen3")
+#SET(EIGEN_PATH "/home/nico/Desktop/PHD-COURSES/libraries/eigen/include/eigen3")
 
 #SET(StdDifferentiation1DSource  ${NekExerciseDir}/StdDifferentiation1D.cpp)
 #ADD_EXECUTABLE(StdDifferentiation1D ${StdDifferentiation1DSource})
 #TARGET_LINK_LIBRARIES(StdDifferentiation1D ${NEKTAR++_LIBRARIES})
 
-SET(StdDifferentiation2DSource  ${NekExerciseDir}/StdDifferentiation2D.cpp)
-ADD_EXECUTABLE(StdDifferentiation2D ${StdDifferentiation2DSource})
-TARGET_LINK_LIBRARIES(StdDifferentiation2D ${NEKTAR++_LIBRARIES})
-
+#SET(StdDifferentiation2DSource  ${NekExerciseDir}/StdDifferentiation2D.cpp)
+#ADD_EXECUTABLE(StdDifferentiation2D ${StdDifferentiation2DSource})
+#TARGET_LINK_LIBRARIES(StdDifferentiation2D ${NEKTAR++_LIBRARIES})
 
 #SET(StdMassMatrix2DSource ${NekExerciseDir}/StdMass2D.cpp)
 #ADD_EXECUTABLE(StdMMatrix2D ${StdMassMatrix2DSource})
@@ -54,3 +51,6 @@ TARGET_LINK_LIBRARIES(StdDifferentiation2D ${NEKTAR++_LIBRARIES})
 #ADD_EXECUTABLE(LocDifferentiation2D ${LocDifferentiation2DSource})
 #TARGET_LINK_LIBRARIES(LocDifferentiation2D ${NEKTAR++_LIBRARIES})
 
+SET(StdSystem2D  ${NekExerciseDir}/StdSystem2D.cpp)
+ADD_EXECUTABLE(StdSystem ${StdSystem2D})
+TARGET_LINK_LIBRARIES(StdSystem ${NEKTAR++_LIBRARIES})
