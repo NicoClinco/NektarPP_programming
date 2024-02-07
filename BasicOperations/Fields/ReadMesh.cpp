@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   for(unsigned int i=0;i< geometry->GetNumFaces();++i)
     std::cout << geometry->GetFid(i) << " ";
   std::cout << "\n";
-  ///Get the LOCAL COORDINATES:
+  ///Get the LOCAL COORDINATES: in the element:
   Array<OneD, NekDouble> glo_coord(3,-3.14);
   Array<OneD, NekDouble> loc_coord(3,0.0);
 
@@ -71,7 +71,16 @@ int main(int argc, char *argv[])
   ///At the end of the story, the geometry object is an object which
   /// contains a bunch of vertexes, faces id.
 
-  
+  /*
+  std::cout << "\n";
+  Array<OneD,NekDouble> a(3,2.0);
+  std::vector<Array<OneD,NekDouble>> b(2,Array<OneD,NekDouble>(3,1.0));
+  /// Try to copy the array:
+  b[0] = a;
+  for(const auto& v : b)
+    for(const auto& e : v)
+      std::cout << e << " ";
+  */
   
   
   

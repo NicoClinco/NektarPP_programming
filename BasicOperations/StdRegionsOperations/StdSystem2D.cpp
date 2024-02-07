@@ -5,7 +5,13 @@
 #include <LibUtilities/Polylib/Polylib.h>
 #include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
 #include <StdRegions/StdQuadExp.h>
-#include <LocalRegions/QuadExp.h>
+#include <StdRegions/StdMatrixKey.h>
+#include <LibUtilities/LinearAlgebra/NekMatrix.hpp>
+
+//#include <LocalRegions/QuadExp.h>
+
+//#include <SpatialDomains/PointGeom.h>
+//#include <SpatialDomains/QuadGeom.h>
 
 using namespace Nektar;
 using namespace std;
@@ -22,7 +28,7 @@ int main(int, char **)
 
   // Create a basiskey:
   unsigned int NUMMODES = 5;
-  unsigned int NQx=10; unsigned int NQy =10; // Number of points of quadrature along the x direction
+  unsigned int NQx=5; unsigned int NQy =5; // Number of points of quadrature along the x direction
   
   LibUtilities::PointsKey pkeyDir1(NQx,LibUtilities::PointsType::eGaussLobattoLegendre);
   LibUtilities::BasisKey bDir1(LibUtilities::BasisType::eOrtho_A,NUMMODES,pkeyDir1);
@@ -40,7 +46,7 @@ int main(int, char **)
     
     for(unsigned i =0;i<xi1.size();++i)
       for(unsigned j =0;j<xi2.size();++j)
-	f[j+xi1.size()*i] = std::pow(xi1[i],1)*std::pow(xi2[j],1);
+	f[j+xi1.size()*i] = std::pow(xi1[i],6)*std::pow(xi2[j],6);
 
     return;
   };
@@ -63,12 +69,13 @@ int main(int, char **)
    * (Discrete galerkin projection)
    */
 
+  /*
   /// Step 1: Get the mass matrix:
   StdRegions::StdMatrixKey massKey(StdRegions::MatrixType::eMass,
 				   LibUtilities::ShapeType::eQuadrilateral,qExp);
 
-  StdRegions::StdMatrixKey InvmassKey(StdRegions::MatrixType::eInvMass,
-				      LibUtilities::ShapeType::eQuadrilateral,qExp);
+  //StdRegions::StdMatrixKey InvmassKey(StdRegions::MatrixType::eInvMass,
+  //				      LibUtilities::ShapeType::eQuadrilateral,qExp);
   DNekMatSharedPtr mass = qExp.GenMatrix(massKey);
   /// Invert:
   mass->Invert();
@@ -96,25 +103,44 @@ int main(int, char **)
   std::cout << "Result of the Discrete Galerkin projection: \n";
   std::cout << "Qx,Qy,NmodesX,NmodesY: "<< NQx <<" " << NQy << " " << NUMMODES << "\n";
   std::cout << "Error L^2 norm: "<< qExp.L2(f_nodal,f) << "\n";
-
+  */
  
   /*  
   for(unsigned int i=0;i<f_nodal.size();++i)
     std::cout <<f[i] << " " << f_nodal[i]<<"\n";
   */
 
+  // Here we get the Laplacian matrix:
+  StdRegions::StdMatrixKey LaplacianKey(StdRegions::MatrixType::eMass,
+				      LibUtilities::ShapeType::eQuadrilateral,qExp);
+  
+  DNekMatSharedPtr Laplacian = qExp.GenMatrix(LaplacianKey);
+
+  std::cout << *Laplacian << "\n";
+
+  
+
+
+
+
+  
   /// Moving from the StandardRegion to the LocalRegion:
 
+  // To do: How to define a PointGeom.
+  
   // Define a geometry2D:
-
-  using namespace SpatialDomains;
   // Generate a points geom:
-  PointGeom p1(2,0,-0.5,-0.5,0.0);
-  PointGeom p2(2,1,+0.5,0.0,0);
-  PointGeom p3(2,2,-0.2,0.2,0);
-  PointGeom p4(2,3,-0.4,0.1,0);
+  /*
+  PointGeomSharedPtr p1 = std::make_shared<PointGeom>(2,1,-0.5,-0.5,0.0);
 
+  
+  //PointGeom p2(2,1,+0.5,0.0,0);
+  //PointGeom p3(2,2,-0.2,0.2,0);
+  //PointGeom p4(2,3,-0.4,0.1,0);
 
+  
+
+  
   PointGeomSharedPtr e1[2];
   PointGeomSharedPtr e2[2];
   PointGeomSharedPtr e3[2];
@@ -141,16 +167,22 @@ int main(int, char **)
   edges[2] = std::make_shared<SpatialDomains::SegGeom>(s3);
   edges[3] = std::make_shared<SpatialDomains::SegGeom>(s4);
   
-  SpatialDomains::QuadGeom my_geometry(0,edges);
+  //SpatialDomains::QuadGeom my_geometry(0,edges);
 
-  SpatialDomains::QuadGeomSharedPtr pGeom = std::make_shared<SpatialDomains::QuadGeom>(my_geometry);
-  
-  LocalRegions::QuadExp locQuadExp(bDir1,bDir1,pGeom);
+  //SpatialDomains::QuadGeomSharedPtr pGeom = std::make_shared<SpatialDomains::QuadGeom>(my_geometry);
+
+  // Creatint the quadrilateral expansion:
+  //LocalRegions::QuadExp locQuadExp(bDir1,bDir1,pGeom);
 
   // Here, we have the expansion in the local region and
   // we can use functions to integrate directly in
   // this element.
+
   
+  // We can create matrixes, for example the Helmholtz matrix:
+
+  //const auto locMass = locQuadExp.GetLocMatrix(StdRegions::MatrixType::eMass);
+  */
   
   
   
