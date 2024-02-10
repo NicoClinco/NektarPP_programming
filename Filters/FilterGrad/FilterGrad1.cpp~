@@ -129,91 +129,116 @@ void FilterGrad::v_Update(
   auto fluidEqu = std::dynamic_pointer_cast<FluidInterface>(equ);
   ASSERTL0(fluidEqu, "Grad-filter is incompatible with this solver.");
 
-
-  // Get the physical-fields:
-  Array<OneD, Array<OneD, NekDouble>> physfields(pFields.size());
-  for (unsigned int i = 0; i < pFields.size(); ++i)
-    {
-      physfields[i] = pFields[i]->GetPhys();
-    }
   
-  unsigned int dim = 0;
-  unsigned int nPoints = pFields[0]->GetNpoints();
   // Get the expansion type:
   if (pFields[0]->GetExpType() == MultiRegions::e1D)
     {
       // 1D
-      dim = 1;      
     }
-  if (pFields[0]->GetExpType() == MultiRegions::e2D)
+   if (pFields[0]->GetExpType() == MultiRegions::e2D)
     {
-      // 2D
-      dim=2;
+      // 1D
     }
-  if (pFields[0]->GetExpType() == MultiRegions::e3D)
+    if (pFields[0]->GetExpType() == MultiRegions::e3D)
     {
-      // 3D
-      dim=3;
+      // 1D
+    }
+  
+  //Store the physical fields:
+  /*
+  Array<OneD, Array<OneD, NekDouble>> physfields(pFields.size());
+  for (i = 0; i < pFields.size(); ++i)
+    {
+      physfields[i] = pFields[i]->GetPhys();
     }
 
-  // Velocities:
-  Array<OneD, Array<OneD, NekDouble>> u(dim);
-  for (unsigned int i = 0; i < dim; ++i)
+  // Put everything in a array of array:
+   Array<OneD, Array<OneD, NekDouble>> u(3);
+  for (i = 0; i < 3; ++i)
     {
       u[i] = Array<OneD, NekDouble>(nPoints);
     }
   fluidEqu->GetVelocity(physfields, u);
-
-  using doubleArray = Array<OneD,NekDouble>;
-  using vecArray = std::vector<doubleArray>;
-  //Compute the gradients:
-  // ux,uy,uz,vx,vy,vz,wx,wy,wz
-  std::vector<Array<OneD,NekDouble>> gUcmpt(dim,doubleArray(nPoints,0.0));
-  //std::vector<Array<OneD,NekDouble>> gradV;
-  //std::vector<Array<OneD,NekDouble>> gradW;
-
-  // vector which contains: [ [ux,uy,uz],[vx,vy,vz],[wx,wy,wz] ]
-  //initialized:
-  std::vector<vecArray> gradU(dim,gUcmpt);
-
-
-  //Store the derivatives (gradients):
-  for(unsigned int uCMPT =0;uCMPT<dim;++uCMPT)
-    {
-      //derivative of u:
-      for(unsigned int gu=0;gu<dim;++gu)
-	{
-	  pFields[0]->PhysDeriv(gu,u[uCMPT],gradU[uCMPT][gu]);
-	}
-    }
+  */
   
   LibUtilities::CommSharedPtr vComm = pFields[0]->GetComm();
+  // Store the velocity:
+  Array<OneD, Array<OneD, NekDouble>> V_xyz(3,Array<OneD,NekDouble>(pFields[0]->GeNpoints(),0.0));
   
-  
-  //Open a file at this time:
-  ofstream current_file;
-  std::string current_filename = "TGV_uvw_"+std::to_string(time)+".csv";
-  m_outputStream << time << " " << current_filename << "\n";
-  //Open-File:
-  // ux[pi] uy[pi]
-  current_file.open(current_filename,std::ios_base::app);
-
-  for(unsigned int p=0;p<nPoints;++p)
+  // Get the physical fields:
+  for(unsigned int i = 0;i<pFields.size();++i)
     {
-      for(unsigned int gu=0;gu<dim;++gu)
-	{
-	  for(unsigned int ucmpt=0;ucmpt<dim;++ucmpt)
-	    {
-	      current_file << gradU[ucmpt][gu][p] <<","; 
-	    }
-	}
-      //END_LINE
-      current_file << "\n"; 
-    }
-   
+      /// Get the field at the quadrature point:
+      const Array<OneD,NekDouble> field = pFields[i]->GetPhys();
+
+      /// Get the field definition:
+      std::vector<LibUtilities::FieldDefinitionsSharedPtr> fieldDefs = pFields[i]->GetFieldDefinitions();
+
+      //Get the density:
+      density = Array<OneD, NekDouble>(pFields[0]->GetNpoints());
+      fluidEqu->GetDensity(physfields, density);
       
-  current_file.close();
-   
+      
+      // Get the name:
+      std::string nameField = fieldDefs[i]->m_fields[0];
+      
+      if(nameField == "rhou")
+	{
+	  Array<OneD,NekDouble> u(field.size(),field);
+	  //Divide rhou/rho:
+	  Vmath::Vdiv(pFields[0]->GetNpoints(),field,1,rho,1,u,1);
+	  Array<OneD,NekDouble> ux(field.size(),0.0);
+	  pFields[i]->PhysDeriv(0,u,ux);
+	  ///Copy:
+	  V_xyz[0] = ux;
+	  found[0] = true;
+	}
+      if(nameField == "rhov")
+	{
+	  Array<OneD,NekDouble> v(field.size(),field);
+	  //divide:
+	  Vmath::Vdiv(pFields[0]->GetNpoints(),field,1,rho,1,v,1);  
+	  Array<OneD,NekDouble> uy(field.size(),0.0);
+	  pFields[i]->PhysDeriv(1,v,uy);
+	  V_xyz[1] = uy;
+	  found[1] = true;
+	}
+      if(nameField == "rhow")
+	{
+	  Array<OneD,NekDouble> w(field.size(),field);
+	  //Divide
+	  Vmath::Vdiv(pFields[0]->GetNpoints(),field,1,rho,1,w,1);
+	  Array<OneD,NekDouble> uz(field.size(),0.0);
+	  pFields[i]->PhysDeriv(2,w,uz);
+	  V_xyz[2] = uz;
+	  found[2] = true;
+	}
+    }//end check
+ 
+  if(vComm->GetRank()==0)
+    {
+      //Open a file at this time:
+      ofstream current_file;
+      std::string current_filename = "TGV_uvw_"+std::to_string(time)+".csv";
+      m_outputStream << time << " " << current_filename << "\n";
+      current_file.open(current_filename);
+
+      for(unsigned int j = 0; j<V_xyz[0].size();++j)
+	{
+	  for(unsigned int i=0;i<3;++i)
+	    {
+	      if(found[i])
+		{
+		  current_file << V_xyz[i][j] << ",";
+		}
+	      else{
+		current_file << "NaN" <<",";
+	      }//END IF
+	    }//end for i
+	  current_file <<"\n";
+	}//end field iterations
+      current_file.close();
+    }
 	
   /*
     if(std::all_of(found.begin(),found.end(),[](bool f){ return f;}))

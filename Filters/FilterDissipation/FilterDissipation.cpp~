@@ -28,7 +28,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 //
-// Description: Output mean.
+// Description: Output The balance of the kinetic energy.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -37,7 +37,7 @@
 #include <boost/core/ignore_unused.hpp>
 
 #include <SolverUtils/Filters/FilterInterfaces.hpp>
-#include <SolverUtils/Filters/FilterGrad.h>
+#include <SolverUtils/Filters/FilterDissipation.h>
 
 using namespace std;
 
@@ -45,11 +45,11 @@ namespace Nektar
 {
 namespace SolverUtils
 {
-std::string FilterGrad::className =
-    SolverUtils::GetFilterFactory().RegisterCreatorFunction("Grad",
-                                                            FilterGrad::create);
+std::string FilterDissipation::className =
+    SolverUtils::GetFilterFactory().RegisterCreatorFunction("Dissipation",
+                                                            FilterDissipation::create);
 
-FilterGrad::FilterGrad(const LibUtilities::SessionReaderSharedPtr &pSession,
+FilterDissipation::FilterDissipation(const LibUtilities::SessionReaderSharedPtr &pSession,
                        const std::weak_ptr<EquationSystem> &pEquation,
                        const ParamMap &pParams)
     : Filter(pSession, pEquation), m_index(-1), m_homogeneous(false), m_planes()
@@ -76,11 +76,11 @@ FilterGrad::FilterGrad(const LibUtilities::SessionReaderSharedPtr &pSession,
     pSession->LoadParameter("LZ", m_homogeneousLength, 0.0);
 }
 
-FilterGrad::~FilterGrad()
+FilterDissipation::~FilterDissipation()
 {
 }
 
-void FilterGrad::v_Initialise(
+void FilterDissipation::v_Initialise(
     const Array<OneD, const MultiRegions::ExpListSharedPtr> &pFields,
     const NekDouble &time)
 {
@@ -112,7 +112,7 @@ void FilterGrad::v_Initialise(
     v_Update(pFields, time);
 }
 
-void FilterGrad::v_Update(
+void FilterDissipation::v_Update(
     const Array<OneD, const MultiRegions::ExpListSharedPtr> &pFields,
     const NekDouble &time)
 {
@@ -121,99 +121,75 @@ void FilterGrad::v_Update(
     {
       return;
     }
-  
-  auto equ = m_equ.lock();
-  ASSERTL0(equ, "Weak pointer expired");
 
-  // Get the fluid-interface as object for obtain the velocities and pressure:
-  auto fluidEqu = std::dynamic_pointer_cast<FluidInterface>(equ);
-  ASSERTL0(fluidEqu, "Grad-filter is incompatible with this solver.");
-
-
-  // Get the physical-fields:
-  Array<OneD, Array<OneD, NekDouble>> physfields(pFields.size());
-  for (unsigned int i = 0; i < pFields.size(); ++i)
-    {
-      physfields[i] = pFields[i]->GetPhys();
-    }
-  
-  unsigned int dim = 0;
-  unsigned int nPoints = pFields[0]->GetNpoints();
-  // Get the expansion type:
-  if (pFields[0]->GetExpType() == MultiRegions::e1D)
-    {
-      // 1D
-      dim = 1;      
-    }
-  if (pFields[0]->GetExpType() == MultiRegions::e2D)
-    {
-      // 2D
-      dim=2;
-    }
-  if (pFields[0]->GetExpType() == MultiRegions::e3D)
-    {
-      // 3D
-      dim=3;
-    }
-
-  // Velocities:
-  Array<OneD, Array<OneD, NekDouble>> u(dim);
-  for (unsigned int i = 0; i < dim; ++i)
-    {
-      u[i] = Array<OneD, NekDouble>(nPoints);
-    }
-  fluidEqu->GetVelocity(physfields, u);
-
-  using doubleArray = Array<OneD,NekDouble>;
-  using vecArray = std::vector<doubleArray>;
-  //Compute the gradients:
-  // ux,uy,uz,vx,vy,vz,wx,wy,wz
-  std::vector<Array<OneD,NekDouble>> gUcmpt(dim,doubleArray(nPoints,0.0));
-  //std::vector<Array<OneD,NekDouble>> gradV;
-  //std::vector<Array<OneD,NekDouble>> gradW;
-
-  // vector which contains: [ [ux,uy,uz],[vx,vy,vz],[wx,wy,wz] ]
-  //initialized:
-  std::vector<vecArray> gradU(dim,gUcmpt);
-
-
-  //Store the derivatives (gradients):
-  for(unsigned int uCMPT =0;uCMPT<dim;++uCMPT)
-    {
-      //derivative of u:
-      for(unsigned int gu=0;gu<dim;++gu)
-	{
-	  pFields[0]->PhysDeriv(gu,u[uCMPT],gradU[uCMPT][gu]);
-	}
-    }
-  
+  int i;
   LibUtilities::CommSharedPtr vComm = pFields[0]->GetComm();
-  
-  
-  //Open a file at this time:
-  ofstream current_file;
-  std::string current_filename = "TGV_uvw_"+std::to_string(time)+".csv";
-  m_outputStream << time << " " << current_filename << "\n";
-  //Open-File:
-  // ux[pi] uy[pi]
-  current_file.open(current_filename,std::ios_base::app);
 
-  for(unsigned int p=0;p<nPoints;++p)
+  const Array<OneD,NekDouble> field0 = pFields[0]->GetPhys();
+
+  ///Create a vector that contains the the array ux,uy,uz:
+  std::vector<Array<OneD,NekDouble>> V_xyz(3,Array<OneD,NekDouble>(field0.size(),0.0));
+
+  /// Boolean-vector to check if something is wrong.
+  std::vector<bool> found{false,false,false};
+    
+  // Get the physical fields:
+  for(unsigned int i = 0;i<pFields.size();++i)
     {
-      for(unsigned int gu=0;gu<dim;++gu)
+      /// Get the field at the quadrature point:
+      const Array<OneD,NekDouble> field = pFields[i]->GetPhys();
+
+      /// Get the field definition:
+      std::vector<LibUtilities::FieldDefinitionsSharedPtr> fieldDefs = pFields[i]->GetFieldDefinitions();
+	
+      std::string nameField = fieldDefs[0]->m_fields[0];
+      if(nameField == "u")
 	{
-	  for(unsigned int ucmpt=0;ucmpt<dim;++ucmpt)
-	    {
-	      current_file << gradU[ucmpt][gu][p] <<","; 
-	    }
+	  Array<OneD,NekDouble> ux(field.size(),0.0);
+	  pFields[i]->PhysDeriv(0,field,ux);
+	  ///Copy:
+	  V_xyz[0] = ux;
+	  found[0] = true;
 	}
-      //END_LINE
-      current_file << "\n"; 
+      if(nameField == "v")
+	{
+	  Array<OneD,NekDouble> uy(field.size(),0.0);
+	  pFields[i]->PhysDeriv(1,field,uy);
+	  V_xyz[1] = uy;
+	  found[1] = true;
+	}
+      if(nameField == "w")
+	{
+	  Array<OneD,NekDouble> uz(field.size(),0.0);
+	  pFields[i]->PhysDeriv(2,field,uz);
+	  V_xyz[2] = uz;
+	  found[2] = true;
+	}
+    }//end check
+  if(vComm->GetRank()==0)
+    {
+      //Open a file at this time:
+      ofstream current_file;
+      std::string current_filename = "TGV_uvw_"+std::to_string(time)+".csv";
+      m_outputStream << time << " " << current_filename << "\n";
+      current_file.open(current_filename);
+
+      for(unsigned int j = 0; j<V_xyz[0].size();++j)
+	{
+	  for(unsigned int i=0;i<3;++i)
+	    {
+	      if(found[i])
+		{
+		  current_file << V_xyz[i][j] << ",";
+		}
+	      else{
+		current_file << "NaN" <<",";
+	      }//END IF
+	    }//end for i
+	  current_file <<"\n";
+	}//end field iterations
+      current_file.close();
     }
-   
-      
-  current_file.close();
-   
 	
   /*
     if(std::all_of(found.begin(),found.end(),[](bool f){ return f;}))
@@ -247,7 +223,7 @@ void FilterGrad::v_Update(
   */
 }
 
-void FilterGrad::v_Finalise(
+void FilterDissipation::v_Finalise(
     const Array<OneD, const MultiRegions::ExpListSharedPtr> &pFields,
     const NekDouble &time)
 {
@@ -259,7 +235,7 @@ void FilterGrad::v_Finalise(
     }
 }
 
-bool FilterGrad::v_IsTimeDependent()
+bool FilterDissipation::v_IsTimeDependent()
 {
     return true;
 }
