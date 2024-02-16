@@ -7,8 +7,22 @@
 #include <LibUtilities/Polylib/Polylib.h>
 #include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
 #include <LibUtilities/BasicUtils/FieldIOXml.h>
+#include <FieldUtils/Field.hpp>
+#include <MultiRegions/ExpList.h>
 
 using namespace Nektar;
+
+
+std::ostream& operator<<(std::ofstream& ostream,
+			 const MultiRegions::ExpList& expansion)
+{
+  ostream << "This file contains information about an expansion list\n";
+  ostream << "Total number of quadrature-points :"<< expansion.GetTotPoints() <<"\n";
+  ostream << "Total number of degrees of freedom :"<< expansion.GetNcoeffs() << "\n";
+  return ostream;
+  //const auto& phys_array = expansion.GetPhys()
+};
+
 
 int main(int argc, char *argv[])
 {
@@ -20,14 +34,10 @@ int main(int argc, char *argv[])
   pcurrentSession =  LibUtilities::SessionReader::CreateInstance(argc,argv);
   LibUtilities::CommSharedPtr pComm = pcurrentSession->GetComm();
   
-  
   // Creating a shared pointer to a FieldIOXml
   LibUtilities::FieldIOSharedPtr pFieldIOxml;
-
-
   // Get the pointer for the common comunicator:
   pFieldIOxml = LibUtilities::FieldIOXml::create(pComm,false);
-
 
   //Import a .chk file:
   std::string Inputfile("TGV6p3_ALIGNED_1.chk");
@@ -49,27 +59,27 @@ int main(int argc, char *argv[])
    * FieldData will contain fields defined in FieldDefs.
    */
   
-  /// Perform a cycle for every fld file
+  /// Perform a cycle for every fld file contained in the .chk directory
   /// that is contained in the directory:
+  /*
   for(auto pfd : FieldDefs)
     {
       auto fd = *pfd;
-      ///Every single file contains different fields:
+      ///Every single "FieldDef" contains different physical-fields:
       std::vector<std::string> field_names = fd.m_fields;
 
-      /// Field names:
-      ///for(auto fieldname : field_names)
-      ///	std::cout << fieldname << " ";
+      // Field names:
+      unsigned int counter =0;
+      for(auto fieldname : field_names)
+	{
+	  std::cout << fieldname << " ";
+	  ++counter;
+	}
+      //Here we have 14 fields.
+      //std::cout << counter <<"\n";
 
-      /// Number of modes per direction:
-      ///std::vector<unsigned int> nummodes = fd.m_numModes;
-      
-      /*
-      std::cout << "Number of points x-y-z:" << fd.m_numPoints[0] << " "
-       	<< fd.m_numPoints[1] << " "<< fd.m_numPoints[2] <<"\n";
-      */
-      }
-
+    }
+  */
   /// TO DO: Read the mesh file and introduce an ordering for
   /// understanding the coordinates.
   
@@ -78,15 +88,64 @@ int main(int argc, char *argv[])
 
   /// Note: Every field is stored in a contiguos vector
   /// for each fld file.
+  /*
   for(const auto& phi : FieldData)
     std::cout << phi.size() << " ";
   std::cout << "\n";
+  */
+  
+  FieldUtils::FieldSharedPtr pGenField
+    = std::make_shared<FieldUtils::Field>(FieldUtils::Field());
+  
+  //Copy of the mesh-graph:
+  pGenField->m_graph = SpatialDomains::MeshGraph::Read(pcurrentSession);
 
   
-  // Creating a specific class for read multifld files:
+   
+  //Resize the ExpList vector:
+  //pGenField->m_exp.resize(1);
+  pGenField->m_exp.emplace_back(new MultiRegions::ExpList(pcurrentSession,pGenField->m_graph));
+  //pGenField->m_exp.push_back(pGenField->SetUpFirstExpList(0));
+  //auto shared_ptrExp = pGenField->SetUpFirstExpList(1,true);
+  //Create the expansion-list:
+  //pGenField->m_exp[0] = pGenField->SetUpFirstExpList(0);
+  
+  std::ofstream infoExpansion("expansion_info.txt");
+
+ 
+  
+  infoExpansion << (*pGenField->m_exp[0]);
+  infoExpansion.close();
+  
+  Array<OneD,double> global_coeffs(pGenField->m_exp[0]->GetNcoeffs());
+
+  //Get the coefficients of the expansion:
+  pGenField->m_exp[0]->ExtractCoeffsFromFile("TGV6p3_ALIGNED_1.chk",pComm,"rhou",global_coeffs);
+  
+  std::cout << "Number of coefficients of the solution :"<< global_coeffs.size() <<"\n";
+  
+  std::ofstream outputRho("rhou.csv");
+
+  std::vector<Array<OneD,double>> coordinates(3,Array<OneD,double>(pGenField->m_exp[0]->GetTotPoints(),0.0));
+  //pGenField->m_exp[0]->GetCoords(coordinates[0],coordinates[1],coordinates[2]);
+  Array<OneD,double> coordX(pGenField->m_exp[0]->GetTotPoints());
+  Array<OneD,double> coordY(pGenField->m_exp[0]->GetTotPoints());
+  Array<OneD,double> coordZ(pGenField->m_exp[0]->GetTotPoints());
+  pGenField->m_exp[0]->GetCoords(coordX,coordY,coordZ);
+  
+  size_t counter = 0;
+  for(counter=0;counter<global_coeffs.size();++counter)
+    {
+      outputRho <<coordX[counter] <<"," << global_coeffs[counter] << ",\n";
+    }
+  outputRho.close();
+   /*
+  std::cout <<" ########################################### \n";
+  std::cout << "#### TESTING HOW TO READ MULTIPLE FLD FILES ###\n";
+
+  
+  //Creating a specific class for read multifld files:
   LibUtilities::FieldIOXml FieldIOxml(pComm,false);
-
-  
 
   
   //In this case we read directly the .fld files and we get the
@@ -102,19 +161,20 @@ int main(int argc, char *argv[])
   FieldIOxml.ImportMultiFldFileIDs(InfoFile, fileNames, elementsID,FieldInfoMapPar);
 
   //Print the .fld files:
+  std::cout << "Filenames : ";
   for(const auto& file : fileNames)
     std::cout << file << " ";
-
-  //Print the elements id:
-  //Here we have the elements id.
+  std::cout << "\n";
+  
   unsigned int total_elems = 0;  
   for(const auto& els : elementsID)
     total_elems+=els.size();
   
 
+  // Check if we have printed all the elements:
   std::cout << total_elems << "\n";
 
-  
+  */
   
   
   

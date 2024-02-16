@@ -1,0 +1,16 @@
+#include <cstdio>
+#include <cstdlib>
+#include <numeric>
+#include <vector>
+
+using namespace Nektar;
+
+
+int main(int argc, char *argv[])
+{
+  std::cout << "### EXAMPLES ON THE FIELD-UTILS CLASS ####";
+
+  
+
+  return 0;
+}

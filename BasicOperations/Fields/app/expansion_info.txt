@@ -1,0 +1,3 @@
+This file contains information about an expansion list
+Total number of quadrature-points :27000
+Total number of degrees of freedom :13824
