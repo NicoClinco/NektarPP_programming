@@ -9,6 +9,7 @@
 #include <LibUtilities/BasicUtils/FieldIOXml.h>
 #include <FieldUtils/Field.hpp>
 #include <MultiRegions/ExpList.h>
+#include "FieldFunctions.hpp"
 
 using namespace Nektar;
 
@@ -16,9 +17,11 @@ using namespace Nektar;
 std::ostream& operator<<(std::ofstream& ostream,
 			 const MultiRegions::ExpList& expansion)
 {
+  std::cout << "Writing information about the expansion\n";
   ostream << "This file contains information about an expansion list\n";
   ostream << "Total number of quadrature-points :"<< expansion.GetTotPoints() <<"\n";
   ostream << "Total number of degrees of freedom :"<< expansion.GetNcoeffs() << "\n";
+  ostream << "The expansion has physical values? :" << expansion.GetPhysState() << "\n";
   return ostream;
   //const auto& phys_array = expansion.GetPhys()
 };
@@ -103,42 +106,82 @@ int main(int argc, char *argv[])
   
    
   //Resize the ExpList vector:
-  //pGenField->m_exp.resize(1);
   pGenField->m_exp.emplace_back(new MultiRegions::ExpList(pcurrentSession,pGenField->m_graph));
-  //pGenField->m_exp.push_back(pGenField->SetUpFirstExpList(0));
-  //auto shared_ptrExp = pGenField->SetUpFirstExpList(1,true);
+
+  // This does not work:
+  //pGenField->m_exp.resize(1);
+  //auto shared_ptrExp = pGenField->SetUpFirstExpList(0,true);
   //Create the expansion-list:
   //pGenField->m_exp[0] = pGenField->SetUpFirstExpList(0);
   
   std::ofstream infoExpansion("expansion_info.txt");
 
- 
   
   infoExpansion << (*pGenField->m_exp[0]);
   infoExpansion.close();
-  
+
+  // Get the coefficients for the expansion:
   Array<OneD,double> global_coeffs(pGenField->m_exp[0]->GetNcoeffs());
-
-  //Get the coefficients of the expansion:
   pGenField->m_exp[0]->ExtractCoeffsFromFile("TGV6p3_ALIGNED_1.chk",pComm,"rhou",global_coeffs);
-  
-  std::cout << "Number of coefficients of the solution :"<< global_coeffs.size() <<"\n";
-  
-  std::ofstream outputRho("rhou.csv");
 
-  std::vector<Array<OneD,double>> coordinates(3,Array<OneD,double>(pGenField->m_exp[0]->GetTotPoints(),0.0));
+  //This works!
+  //Array<OneD,double> rhouX(pGenField->m_exp[0]->GetNcoeffs());
+  //pGenField->m_exp[0]->PhysDeriv(MultiRegions::Direction::eX,global_coeffs,rhouX);
+ 
+  
+  std::ofstream coordinates("rhou.csv");
+
+  auto TotalQuadNodes = pGenField->m_exp[0]->GetTotPoints();
+  std::cout << "Total number of Q-nodes: "<< TotalQuadNodes << "\n";
+  
   //pGenField->m_exp[0]->GetCoords(coordinates[0],coordinates[1],coordinates[2]);
-  Array<OneD,double> coordX(pGenField->m_exp[0]->GetTotPoints());
-  Array<OneD,double> coordY(pGenField->m_exp[0]->GetTotPoints());
-  Array<OneD,double> coordZ(pGenField->m_exp[0]->GetTotPoints());
+  Array<OneD,double> coordX(TotalQuadNodes);
+  Array<OneD,double> coordY(TotalQuadNodes);
+  Array<OneD,double> coordZ(TotalQuadNodes);
   pGenField->m_exp[0]->GetCoords(coordX,coordY,coordZ);
   
   size_t counter = 0;
   for(counter=0;counter<global_coeffs.size();++counter)
     {
-      outputRho <<coordX[counter] <<"," << global_coeffs[counter] << ",\n";
+      coordinates << coordX[counter] << ","<<coordY[counter]<<","<<coordZ[counter] << ",\n";
     }
-  outputRho.close();
+  coordinates.close();
+
+  
+  MathLab::Utilities::StringList fieldsnames = {"rho","rhou","rhov","rhow"};
+  auto m_fields = MathLab::Utilities::ExtractPhysFromFile
+    (
+     pcurrentSession,pGenField->m_exp[0],fieldsnames,"TGV6p3_ALIGNED_1.chk"
+    );
+  // Test the physical gradients: //
+  auto gradX_fields = std::vector<Array<OneD,double>>(m_fields.size(),Array<OneD,double>(m_fields[0].size()));
+  
+  MathLab::Utilities::ComputePhysGradients(pGenField->m_exp[0],m_fields,gradX_fields,0);
+
+
+  std::ofstream output_file("fields_data.csv");
+  for(unsigned int i=0;i<m_fields[0].size();++i)
+    {
+      for(unsigned int f = 0;f<4;++f)
+	{
+	  output_file << m_fields[f][i] << ","; 
+	}
+      //Printing also the gradient along X:
+      for(unsigned int f = 0;f<4;++f)
+	{
+	  output_file << gradX_fields[f][i] << ",";
+	}
+      output_file<< "\n";
+    }
+  output_file.close();
+
+
+
+
+
+
+
+  
    /*
   std::cout <<" ########################################### \n";
   std::cout << "#### TESTING HOW TO READ MULTIPLE FLD FILES ###\n";

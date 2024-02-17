@@ -30,7 +30,4 @@
         </Provenance>
         <NekMeshCommandLine>-m peralign:surf1=1:surf2=2:dir=z -m peralign:surf1=4:surf2=6:dir=x -m peralign:surf1=3:surf2=5:dir=y TGV6p3.xml TGV6p3_ALIGNED.xml </NekMeshCommandLine>
     </Metadata>
-    <EXPANSIONS>
-        <E COMPOSITE="C[0]" NUMMODES="4" TYPE="MODIFIED" FIELDS="u" />
-    </EXPANSIONS>
 </NEKTAR>

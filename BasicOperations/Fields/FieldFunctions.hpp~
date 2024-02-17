@@ -1,0 +1,15 @@
+/**
+ * This file contains various functions useful for reading and operating
+ * on fields (post-processing utilities)
+ *
+ */
+
+#include <LibUtilities/Foundations/ManagerAccess.h>
+#include <LibUtilities/Polylib/Polylib.h>
+#include <LibUtilities/LinearAlgebra/NekTypeDefs.hpp>
+#include <LibUtilities/BasicUtils/FieldIOXml.h>
+#include <FieldUtils/Field.hpp>
+#include <MultiRegions/ExpList.h>
+
+using namespace Nektar;
+
